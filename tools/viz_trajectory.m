@@ -1,9 +1,10 @@
-function viz_trajectory(tab_traj, frame_numb)
+function viz_trajectory(r, q, options)
 
-% This is our ideal number of TF frames to display
-% Defaults to 15
-if ~exist('frame_numb', 'var')
-    frame_numb = 15;
+arguments
+    r (:, 3) double
+    q (:, 4) double
+    options.a (:, 3) double
+    options.frame_numb (1, 1) double = 15
 end
 
 figure()
@@ -15,28 +16,29 @@ hold on
 % are always evenly distributed, at the cost of sometimes showing more/less
 % than the desired number of frames.
 
-n = length(tab_traj.r);
+n = length(r);
 indices_all = 1:n;
 
 % Calculate all factors for length of indices
 all_factors = indices_all(rem(n, indices_all) == 0);
 
 % Find index of factor closest to desired frame #
-[~, i] = min(abs(all_factors - frame_numb));
+[~, i] = min(abs(all_factors - options.frame_numb));
 
 % Create filtered indices for using nearest factor
 indices_tform = linspace(0, n, all_factors(i)+1);
 indices_tform(1) = 1;
 
 %% Plotting
-plotTransforms(tab_traj.r(indices_tform, :), tab_traj.q(indices_tform, :))
-plot3(tab_traj.r(:, 1), tab_traj.r(:, 2), tab_traj.r(:, 3))
+plotTransforms(r(indices_tform, :), q(indices_tform, :))
+plot3(r(:, 1), r(:, 2), r(:, 3))
 
-% Plot accelerations at TF frames, if the field exists in the table
-if any(strcmp('a', tab_traj.Properties.VariableNames))
-    a_world = rotatepoint(conj(quaternion(tab_traj.q(indices_tform, :))), tab_traj.a(indices_tform, :));
-    quiver3(tab_traj.r(...
-        indices_tform, 1), tab_traj.r(indices_tform, 2), tab_traj.r(indices_tform, 3),...
+% Plot accelerations at TF frames, if the argument is passed
+if isfield(options, 'a')
+    % Calculate accelerations in world frame
+    a_world = rotatepoint(conj(quaternion(q(indices_tform, :))), options.a(indices_tform, :));
+    % Quiver plot
+    quiver3(r(indices_tform, 1), r(indices_tform, 2), r(indices_tform, 3),...
         a_world(:, 1), a_world(:, 2), a_world(:, 3)...
     )
 end
