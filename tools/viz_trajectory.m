@@ -1,8 +1,8 @@
-function viz_trajectory(r, q, frame_numb)
+function viz_trajectory(tab_traj, frame_numb)
 
 % This is our ideal number of TF frames to display
 % Defaults to 15
-if ~exist('frame_numb')
+if ~exist('frame_numb', 'var')
     frame_numb = 15;
 end
 
@@ -15,7 +15,7 @@ hold on
 % are always evenly distributed, at the cost of sometimes showing more/less
 % than the desired number of frames.
 
-n = length(r);
+n = length(tab_traj.r);
 indices_all = 1:n;
 
 % Calculate all factors for length of indices
@@ -29,8 +29,17 @@ indices_tform = linspace(0, n, all_factors(i)+1);
 indices_tform(1) = 1;
 
 %% Plotting
-plotTransforms(r(indices_tform, :), q(indices_tform, :))
-plot3(r(:, 1), r(:, 2), r(:, 3))
+plotTransforms(tab_traj.r(indices_tform, :), tab_traj.q(indices_tform, :))
+plot3(tab_traj.r(:, 1), tab_traj.r(:, 2), tab_traj.r(:, 3))
+
+% Plot accelerations at TF frames, if the field exists in the table
+if any(strcmp('a', tab_traj.Properties.VariableNames))
+    a_world = rotatepoint(conj(quaternion(tab_traj.q(indices_tform, :))), tab_traj.a(indices_tform, :));
+    quiver3(tab_traj.r(...
+        indices_tform, 1), tab_traj.r(indices_tform, 2), tab_traj.r(indices_tform, 3),...
+        a_world(:, 1), a_world(:, 2), a_world(:, 3)...
+    )
+end
 
 axis equal
 grid on
