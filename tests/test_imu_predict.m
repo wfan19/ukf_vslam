@@ -16,14 +16,19 @@ end
 
 %% Core IMU integration simulation
 function sim_imu_predict(testCase, r_t, q_t, options)
-
     arguments
         testCase
         r_t
         q_t
-        options.tspan = default_tspan()
+        options.tspan (1, :) double = default_tspan() % Timespan vector
         options.plot (1, 1) logical = true % Change for toggling default plotting behavior
+        options.max_r_rmse (1, 1) double = 0.05 % Max RMSE (m). We are shooting for centimeter or even millimeter accuracy
     end
+    
+    % Print current test function name
+    stack = dbstack;
+    disp("==================================================================")
+    fprintf("Test: %s\n", stack(2).name)
 
     % Generate simulated dataset
     tab_sim = generate_trajectory(options.tspan, r_t, q_t);
@@ -81,9 +86,9 @@ function sim_imu_predict(testCase, r_t, q_t, options)
         plot_func(false)
     end
     
-    r_rmse = sqrt(mean(tab_sim.r - r_int, 'all')^2);
-    fprintf("Position RMSE: %fm\n", r_rmse);
-    verifyLessThan(testCase, r_rmse, 0.5, @() plot_func(true));
+    r_rmse = sqrt(mean(tab_sim.r - r_int, 1).^2);
+    fprintf("Position RMSE: [%.4f, %.4f, %.4f]m\n", r_rmse(1), r_rmse(2), r_rmse(3));
+    verifyLessThan(testCase, r_rmse, options.max_r_rmse, @() plot_func(true));
 end
 
 %% ========================= Test Cases =========================
