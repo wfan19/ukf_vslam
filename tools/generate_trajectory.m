@@ -41,11 +41,12 @@ f_sub = @(expression)(eval(subs(expression, struct_vals)));
 
 r = f_sub(r_t)';
 q = f_sub(q_t)';
+v = f_sub(v_t_body)';
 a = f_sub(a_t_body)';
 omega = f_sub(omega_t)';
 
 t = tspan(:);
-tab_out = table(t, r, q, a, omega);
+tab_out = table(t, r, v, a, q, omega);
 
 %% Functions
     % Quaternion vector to rotation matrix in homogenous coordinates
