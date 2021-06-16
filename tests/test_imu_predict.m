@@ -7,7 +7,16 @@ tests = functiontests(functions);
 end
 
 %% Core IMU integration simulation
-function sim_imu_predict(t, r_t, q_t)
+function sim_imu_predict(testCase, t, r_t, q_t, options)
+
+    arguments
+        testCase
+        t
+        r_t
+        q_t
+        options.plot (1, 1) logical = 0
+    end
+
     % Generate simulated dataset
     tab_sim = generate_trajectory(t, r_t, q_t);
     
@@ -36,18 +45,30 @@ function sim_imu_predict(t, r_t, q_t)
         q_int(i, :) = state_t.q_body';
     end
     
-    figure()
-    subplot(1, 2, 1)
-    viz_trajectory(tab_sim.r, tab_sim.q, 'figure', 0)
-    plot3(r_int(:, 1), r_int(:, 2), r_int(:, 3));
-    title("Reference trajectory")
+    function plot_func(failure)
+        if xor(failure, options.plot)
+            figure()
+            subplot(1, 2, 1)
+            viz_trajectory(tab_sim.r, tab_sim.q, 'figure', 0)
+            plot3(r_int(:, 1), r_int(:, 2), r_int(:, 3));
+            title("Reference trajectory")
+
+            subplot(1, 2, 2)
+            viz_trajectory(r_int, q_int, 'figure', 0)
+            plot3(tab_sim.r(:, 1), tab_sim.r(:, 2), tab_sim.r(:, 3));
+            title("Reconstructed trajectory")
+
+            set(gcf, 'position', [250, 150, 1500 800])
+        end
+    end
+
+    if options.plot
+        plot_func(false)
+    end
     
-    subplot(1, 2, 2)
-    viz_trajectory(r_int, q_int, 'figure', 0)
-    plot3(tab_sim.r(:, 1), tab_sim.r(:, 2), tab_sim.r(:, 3));
-    title("Reconstructed trajectory")
-    
-    set(gcf, 'position', [250, 150, 1500 800])
+    r_rmse = sqrt(mean(tab_sim.r - r_int, 'all')^2);
+    fprintf("Position RMSE: %fm\n", r_rmse);
+    verifyLessThan(testCase, r_rmse, 0.5, @() plot_func(true));
 end
 
 %% ========================= Test Cases =========================
@@ -73,7 +94,7 @@ function test_straight_no_rotation(testCase)
 
     tspan = linspace(t_0, t_end, n);
 
-    sim_imu_predict(tspan, r_t, q_t);
+    sim_imu_predict(testCase, tspan, r_t, q_t);
 end
 
 %% Test arbitrary path
@@ -111,5 +132,5 @@ function test_complex_path(testCase)
 
     tspan = linspace(t_0, t_end, n);
 
-    sim_imu_predict(tspan, r_t, q_t);
+    sim_imu_predict(testCase, tspan, r_t, q_t);
 end
