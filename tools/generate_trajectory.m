@@ -20,20 +20,33 @@ function tab_out = generate_trajectory(tspan, r_t, q_t)
 % The key concept is extrinsic transformations. See section 2.3.7 in 
 % Geometric Mechanics, Hatton&Choset
 
+% Calculate omega(t) and v(t) using a first order tangent space
 g_t = construct_pose(q_t, r_t);
 g_dot = simplify(diff(g_t));
 g_inv = simplify(construct_pose(invert_quat(q_t), -r_t));
 g_circ_right = simplify(g_inv*g_dot);
 
-% Extract omega and v from g_circ, the twist matrix
+% Extract omega(t) and v(t) from g_circ, the twist matrix
 omega_t = [
     g_circ_right(2, 1);
     -g_circ_right(3, 1);
     g_circ_right(3, 2)
 ];
 v_t_body = g_circ_right(1:3, 4);
-% a(t) = d/dt v(t)
-a_t_body = simplify(diff(v_t_body));
+
+% Calculate a(t) in the body frame by applying the extrinsic transformation
+% to the world-acceleration instead of the world-velocity
+v_t_world = g_dot(1:3, 4);
+h_t = g_t;
+h_t(1:3, 4) = v_t_world;
+h_inv = g_inv;
+h_inv(1:3, 4) = v_t_world;
+
+h_dot = simplify(diff(h_t));
+h_circ_right = simplify(h_inv*h_dot);
+
+% Extract a(t) from the extrinsi
+a_t_body = h_circ_right(1:3, 4);
 
 %% Substitution
 struct_vals = struct('t', tspan);
