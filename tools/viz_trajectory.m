@@ -39,7 +39,7 @@ plotTransforms(r(indices_tform, :), q(indices_tform, :))
 % Plot accelerations at TF frames, if the argument is passed
 if isfield(options, 'a')
     % Calculate accelerations in world frame
-    a_world = rotatepoint(conj(quaternion(q(indices_tform, :))), options.a(indices_tform, :));
+    a_world = rotatepoint(quaternion(q(indices_tform, :)), options.a(indices_tform, :));
     % Quiver plot
     quiver3(r(indices_tform, 1), r(indices_tform, 2), r(indices_tform, 3),...
         a_world(:, 1), a_world(:, 2), a_world(:, 3)...
