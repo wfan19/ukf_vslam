@@ -5,9 +5,12 @@ arguments
     q (:, 4) double
     options.a (:, 3) double
     options.frame_numb (1, 1) double = 15
+    options.figure (1, 1) logical = 1
 end
 
-figure()
+if options.figure
+    figure()
+end
 hold on
 
 %% Calculate indices for which TF frames to show
@@ -30,8 +33,8 @@ indices_tform = linspace(0, n, all_factors(i)+1);
 indices_tform(1) = 1;
 
 %% Plotting
+% Plot TF frames
 plotTransforms(r(indices_tform, :), q(indices_tform, :))
-plot3(r(:, 1), r(:, 2), r(:, 3))
 
 % Plot accelerations at TF frames, if the argument is passed
 if isfield(options, 'a')
@@ -43,8 +46,18 @@ if isfield(options, 'a')
     )
 end
 
+% Plot trajectory path (at full resolution)
+% We plot this last so that if you want to plot another path against it
+% they will be back to back in the legends
+plot3(r(:, 1), r(:, 2), r(:, 3))
+
+xlabel("x")
+ylabel("y")
+zlabel("z")
+title("Trajectory")
+
 axis equal
 grid on
-fprintf("TF frames displayed: %d", all_factors(i)+1)
+fprintf("TF frames displayed: %d\n", all_factors(i)+1)
 
 end
