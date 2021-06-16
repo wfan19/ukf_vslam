@@ -1,23 +1,80 @@
 function tests = test_imu_predict
-%tests = functiontests(localfunctions);
-test_complex_path()
-end
-
-%{
-%% Test if body states are updated correctly in the case of a purely linear motion
-% TODO: Description of the test scenario
-function testPureLinMvmtBodyStates(testCase)
-
-end
-
-%% Test if body states are updated correctly in the case of a purely rotational motion
-% TODO: Description of the test scenario
-function testPureRotMvmtBodyStates(testCase)
-
-end
-
-%% Test for pure
+functions = localfunctions;
+tests = functiontests(functions);
 %}
+
+
+end
+
+%% Core IMU integration simulation
+function sim_imu_predict(t, r_t, q_t)
+    % Generate simulated dataset
+    tab_sim = generate_trajectory(t, r_t, q_t);
+    
+    % Initialize state
+    t = tab_sim.t(1);
+    r_0 = tab_sim.r(1, :);
+    v_0 = eval(subs(diff(r_t), struct('t', 0)));
+    q_0 = tab_sim.q(1, :);
+    
+    tab_tags_0 = table();
+    
+    state_t = State(r_0, v_0, q_0, tab_tags_0);
+    r_int = zeros(size(tab_sim.r));
+    q_int = zeros(size(tab_sim.q));
+    
+    r_int(1, :) = r_0;
+    q_int(1, :) = q_0;
+    
+    for i = 2 : length(tab_sim.t)
+        dt = tab_sim.t(i) - t;
+        t = tab_sim.t(i);
+        input_t = ImuInput(tab_sim.omega(i-1, :), tab_sim.a(i-1, :));
+        state_t = imu_predict(dt, state_t, input_t);
+        
+        r_int(i, :) = state_t.r_body';
+        q_int(i, :) = state_t.q_body';
+    end
+    
+    figure()
+    subplot(1, 2, 1)
+    viz_trajectory(tab_sim.r, tab_sim.q, 'figure', 0)
+    plot3(r_int(:, 1), r_int(:, 2), r_int(:, 3));
+    title("Reference trajectory")
+    
+    subplot(1, 2, 2)
+    viz_trajectory(r_int, q_int, 'figure', 0)
+    plot3(tab_sim.r(:, 1), tab_sim.r(:, 2), tab_sim.r(:, 3));
+    title("Reconstructed trajectory")
+    
+    set(gcf, 'position', [250, 150, 1500 800])
+end
+
+%% ========================= Test Cases =========================
+%% Test for straight line without rotation
+function test_straight_no_rotation(testCase)
+    syms t
+    assume(t, ["real", "positive"])
+
+    % Constant orientation
+    q_t = [
+        1; 0; 0; 0
+    ];
+
+    % Path over time
+    r_t = [
+        t; 0 ; 0
+    ];
+
+    %  Generate timespan vector
+    n = 342;
+    t_0 = 0;
+    t_end = 10;
+
+    tspan = linspace(t_0, t_end, n);
+
+    sim_imu_predict(tspan, r_t, q_t);
+end
 
 %% Test arbitrary path
 function test_complex_path(testCase)
@@ -54,38 +111,5 @@ function test_complex_path(testCase)
 
     tspan = linspace(t_0, t_end, n);
 
-    sim_test(tspan, r_t, q_t);
-end
-
-%% Core IMU integration simulation
-function sim_test(t, r_t, q_t)
-    % Generate simulated dataset
-    tab_sim = generate_trajectory(t, r_t, q_t);
-    
-    % Initialize state
-    t = tab_sim.t(1);
-    r_0 = tab_sim.r(1, :);
-    v_0 = eval(subs(diff(r_t), struct('t', 0)));
-    q_0 = tab_sim.q(1, :);
-    
-    tab_tags_0 = table();
-    
-    state_t = State(r_0, v_0, q_0, tab_tags_0);
-    r_int = zeros(size(tab_sim.r));
-    q_int = zeros(size(tab_sim.q));
-    
-    r_int(1, :) = r_0;
-    q_int(1, :) = q_0;
-    
-    for i = 2 : length(tab_sim.t)
-        dt = tab_sim.t(i) - t;
-        t = tab_sim.t(i);
-        input_t = ImuInput(tab_sim.omega(i-1, :), tab_sim.a(i-1, :));
-        state_t = imu_predict(dt, state_t, input_t);
-        
-        r_int(i, :) = state_t.r_body';
-        q_int(i, :) = state_t.q_body';
-    end
-    
-    viz_trajectory(r_int, q_int)
+    sim_imu_predict(tspan, r_t, q_t);
 end
