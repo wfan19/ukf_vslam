@@ -11,8 +11,9 @@ function sim_imu_predict(testCase, r_t, q_t, options)
     
     % Print current test function name
     stack = dbstack;
+    caller_name = stack(3).name;
     disp("==================================================================")
-    fprintf("Test: %s\n", stack(2).name) % Print the function name of the calling function
+    fprintf("Test: %s\n", caller_name) % Print the function name of the calling function
 
     % Generate simulated dataset
     tab_sim = generate_trajectory(options.tspan, r_t, q_t);
@@ -56,16 +57,19 @@ function sim_imu_predict(testCase, r_t, q_t, options)
         % plotted so we don't plot twice
         if xor(failure, options.plot)
             figure()
+            sgtitle(caller_name, 'Interpreter', 'none')
             subplot(1, 2, 1)
             viz_trajectory(tab_sim.r, tab_sim.q, 'figure', 0)
             plot3(r_int(:, 1), r_int(:, 2), r_int(:, 3));
             title("Reference trajectory")
+            legend("Reference", "Estimated", 'Location', 'northeast')
 
             subplot(1, 2, 2)
             viz_trajectory(r_int, q_int, 'figure', 0)
             plot3(tab_sim.r(:, 1), tab_sim.r(:, 2), tab_sim.r(:, 3));
             title("Reconstructed trajectory")
-
+            legend("Estimated", "Reference", 'Location', 'northeast')
+            
             set(gcf, 'position', [250, 150, 1500 800])
         end
     end

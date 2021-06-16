@@ -15,7 +15,7 @@ function test_3d_sin1_rotated_no_rotation(testCase)
     assume(t, ["real", "positive"])
 
     % Construct the quaternion using axis-angle
-    q = eul2quat([0, 0, pi/4], 'xyz')';
+    q_t = eul2quat([0, 0, pi/4], 'xyz')';
 
     % Path over time
     r_t = [

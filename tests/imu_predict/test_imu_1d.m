@@ -4,7 +4,7 @@ end
 
 % Default settings for this test suite
 function sim_imu(testCase, r_t, q_t)
-    plotting = true;
+    plotting = false;
     sim_imu_predict(testCase, r_t, q_t, 'plot', plotting);
 end
 
@@ -14,7 +14,7 @@ function test_straight_aligned_no_rotation(testCase)
     assume(t, ["real", "positive"])
 
     % Constant orientation
-    q_t = [
+    q = [
         1; 0; 0; 0
     ];
 
