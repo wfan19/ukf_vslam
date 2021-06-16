@@ -1,18 +1,41 @@
 function tab_out = generate_trajectory(tspan, r_t, q_t)
+% Generates a trajectory table with position, acceleration, ang-vel, etc
+% info given parametric position and orientations, and a list of selection
+% times
+% - tspan: A time vector of 
+% - r_t: 3d symbolic position vector as a function of parameter t
+% - q_t: 4d symbolic quaternion vector as a function of parameter t
+%
+% Outputs:
+% tab_out: Table containing the following information, at timestamps
+% specified by tspan
+% - r: Position
+% - a: Acceleration
+% - q: Orientation
+% - omega: Angular rates
+
+%% Derive symbolic groupwise velocity
+% g_circ = g_inv*gdot, mapping from world velocity to groupwise velocity by
+% inverting the current group state as a transformation
+% The key concept is extrinsic transformations. See section 2.3.7 in 
+% Geometric Mechanics, Hatton&Choset
 
 g_t = construct_pose(q_t, r_t);
 g_dot = simplify(diff(g_t));
 g_inv = simplify(construct_pose(invert_quat(q_t), -r_t));
 g_circ_right = simplify(g_inv*g_dot);
 
+% Extract omega and v from g_circ, the twist matrix
 omega_t = [
     g_circ_right(2, 1);
     -g_circ_right(3, 1);
     g_circ_right(3, 2)
 ];
 v_t_body = g_circ_right(1:3, 4);
+% a(t) = d/dt v(t)
 a_t_body = simplify(diff(v_t_body));
 
+%% Substitution
 struct_vals = struct('t', tspan);
 f_sub = @(expression)(eval(subs(expression, struct_vals)));
 
@@ -21,8 +44,11 @@ q = f_sub(q_t)';
 a = f_sub(a_t_body)';
 omega = f_sub(omega_t)';
 
-tab_out = table(tspan(:), r, q, a, omega);
+t = tspan(:);
+tab_out = table(t, r, q, a, omega);
 
+%% Functions
+    % Quaternion vector to rotation matrix in homogenous coordinates
     function mat = quat_vec_to_mat(q)
         % Reurnts the corresponding rotation matrix for a quaterion q, in
         % homogenous coordinates
@@ -37,11 +63,15 @@ tab_out = table(tspan(:), r, q, a, omega);
         ];
     end
 
+    % Construct SE(3) pose matrix out of a quaternion and a position vector
     function pose_out = construct_pose(q, r)
         pose_out = sym(quat_vec_to_mat(q));
         pose_out(1:3, 4) = r;
     end
 
+    % Invert quaternion
+    % The inverse of a quaternion's rotation is just the complex-conjugate
+    % of the quaternion
     function q_out = invert_quat(q)
         q_out = q;
         q_out(2:4) = -q(2:4);
