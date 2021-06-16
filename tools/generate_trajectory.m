@@ -57,9 +57,9 @@ tab_out = table(t, r, v, a, q, omega);
 
         % Formula from http://groups.csail.mit.edu/graphics/classes/6.837/F01/Lecture09/Slide24.html
         mat = [
-           1-2*y^2-2*z^2, 2*x*y+2*w*z,   2*x*z-2*w*y,   0;
-           2*x*y-2*w*z,   1-2*x^2-2*z^2, 2*y*z+2*w*x,   0;
-           2*x*z+2*w*y,   2*y*z-2*w*x,   1-2*x^2-2*y^2, 0;
+           1-2*y^2-2*z^2, 2*x*y-2*w*z,   2*x*z+2*w*y,   0;
+           2*x*y+2*w*z,   1-2*x^2-2*z^2, 2*y*z-2*w*x,   0;
+           2*x*z-2*w*y,   2*y*z+2*w*x,   1-2*x^2-2*y^2, 0;
            0,             0,             0,             1;
         ];
     end
