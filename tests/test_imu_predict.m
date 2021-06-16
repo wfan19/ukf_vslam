@@ -4,24 +4,29 @@ tests = functiontests(functions);
 %}
 end
 
-% Parameter function for toggling default plotting behavior
-function plotting = toggle_plotting()
-    plotting = true;
+function tspan = default_tspan()
+    %  Generate timespan vector
+    t_0 = 0;
+    t_end = 10;
+    hz = 100;
+    n = (t_end - t_0) * hz;
+
+    tspan = linspace(t_0, t_end, n);
 end
 
 %% Core IMU integration simulation
-function sim_imu_predict(testCase, t, r_t, q_t, options)
+function sim_imu_predict(testCase, r_t, q_t, options)
 
     arguments
         testCase
-        t
         r_t
         q_t
-        options.plot (1, 1) logical = toggle_plotting()
+        options.tspan = default_tspan()
+        options.plot (1, 1) logical = true % Change for toggling default plotting behavior
     end
 
     % Generate simulated dataset
-    tab_sim = generate_trajectory(t, r_t, q_t);
+    tab_sim = generate_trajectory(options.tspan, r_t, q_t);
     
     % Initialize state
     t = tab_sim.t(1);
@@ -97,17 +102,11 @@ function test_straight_aligned_no_rotation(testCase)
         t; 0 ; 0
     ];
 
-    %  Generate timespan vector
-    n = 342;
-    t_0 = 0;
-    t_end = 10;
-
-    tspan = linspace(t_0, t_end, n);
-
-    sim_imu_predict(testCase, tspan, r_t, q_t);
+    sim_imu_predict(testCase, r_t, q_t);
 end
 
 %% Test for travelling in a straight line with non-identity constant orientation
+% The straight line is aligned along the x axis
 function test_straight_rotated_no_rotation(testCase)
     syms t
     assume(t, ["real", "positive"])
@@ -120,15 +119,27 @@ function test_straight_rotated_no_rotation(testCase)
         t; 0 ; 0
     ];
 
-    %  Generate timespan vector
-    n = 342;
-    t_0 = 0;
-    t_end = 10;
-
-    tspan = linspace(t_0, t_end, n);
-
-    sim_imu_predict(testCase, tspan, r_t, q_t);
+    sim_imu_predict(testCase, r_t, q_t);
 end
+
+%% Test flat sinusoid, no rotation
+function test_flat_sinusoid_no_rotation(testCase)
+    syms t
+    assume(t, ["real", "positive"])
+    
+    % Construct the quaternion using axis-angle
+    q_t = eul2quat([0, 0, 0], 'xyz')';
+
+    % Path over time
+    r_t = [
+        t;
+        sin(t);
+        0;
+    ];
+
+    sim_imu_predict(testCase, r_t, q_t);
+end
+
 
 %% Test arbitrary path
 function test_complex_path(testCase)
@@ -164,12 +175,5 @@ function test_complex_path(testCase)
         exp(0.3*t);
     ];
 
-    %  Generate timespan vector
-    n = 342;
-    t_0 = 0;
-    t_end = 10;
-
-    tspan = linspace(t_0, t_end, n);
-
-    sim_imu_predict(testCase, tspan, r_t, q_t);
+    sim_imu_predict(testCase, r_t, q_t);
 end
